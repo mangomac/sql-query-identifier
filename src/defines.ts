@@ -136,6 +136,7 @@ export interface TableReference {
 
 export interface IdentifyOptions {
   strict?: boolean;
+  includeLeadingComments?: boolean;
   dialect?: Dialect;
   identifyTables?: boolean;
   identifyColumns?: boolean;
