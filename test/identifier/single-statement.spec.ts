@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import { Dialect, identify } from '../../src';
+import { Dialect, identify, Options } from '../../src';
 
 describe('identifier', () => {
   describe('given queries with a single statement', () => {
@@ -1896,5 +1896,49 @@ describe('identifier', () => {
       });
       expect(result.type).to.equal('SELECT');
     });
+  });
+});
+
+const options = { dialect: 'mssql', includeLeadingComments: true } as Options;
+
+describe('includeLeadingComments', () => {
+  it('keeps the default keyword offsets and text', () => {
+    const sql = '-- header\nCREATE PROCEDURE p AS SELECT 1;';
+    const actual = identify(sql, { dialect: 'mssql' })[0];
+    expect(actual.start).to.equal(sql.indexOf('CREATE'));
+    expect(actual.text).to.equal(sql.slice(actual.start, actual.end + 1));
+  });
+
+  it('includes leading comments and whitespace when enabled', () => {
+    const sql = '  -- header\n/* detail */\nCREATE PROCEDURE p AS SELECT 1;';
+    const actual = identify(sql, options)[0];
+    expect(actual.start).to.equal(0);
+    expect(actual.text).to.equal(sql);
+    expect(actual.type).to.equal('CREATE_PROCEDURE');
+  });
+
+  it('does not include empty statement delimiters', () => {
+    const sql = '; ;\n-- header\nSELECT 1;';
+    const actual = identify(sql, options)[0];
+    expect(actual.start).to.equal(3);
+    expect(actual.text).to.equal(sql.slice(3));
+  });
+
+  it('keeps each header with its own statement', () => {
+    const sql = '-- first\nCREATE VIEW a AS SELECT 1;\n/* second */\nCREATE VIEW b AS SELECT 2;';
+    const actual = identify(sql, options);
+    expect(actual).to.have.length(2);
+    expect(actual[0].text).to.equal(sql.slice(0, sql.indexOf(';') + 1));
+    expect(actual[1].start).to.equal(sql.indexOf(';') + 1);
+    expect(actual[1].text).to.equal(sql.slice(actual[1].start));
+  });
+
+  it('does not change whitespace-only prefixes', () => {
+    expect(identify('  SELECT 1;', options)[0].start).to.equal(2);
+  });
+
+  it('does not treat comment markers in strings as headers', () => {
+    const actual = identify("SELECT '-- not a header'; SELECT 2;", options);
+    expect(actual[1].text).to.equal('SELECT 2;');
   });
 });
