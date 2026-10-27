@@ -182,3 +182,20 @@ npm test
 
 Copyright (c) 2016-2021 The SQLECTRON Team.
 This software is licensed under the [MIT License](https://github.com/sqlectron/sql-query-identifier/blob/master/LICENSE).
+
+## Leading comments
+
+Pass `includeLeadingComments: true` to include a statement's leading comments in
+its `text`. Its `start` moves to the beginning of the comment prefix, including
+adjacent whitespace. `end` does not change. Semicolons before the prefix stay out
+of the statement. Whitespace alone does not change `start`.
+
+```js
+identify('-- header\nCREATE VIEW v AS SELECT 1;', {
+  dialect: 'mssql',
+  includeLeadingComments: true,
+});
+```
+
+The option defaults to `false`. Existing callers still receive text and offsets
+that start at the first keyword.
