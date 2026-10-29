@@ -166,12 +166,14 @@ For `  -- header\n  SELECT 1;`:
 | --- | --- |
 | Neither | `SELECT` |
 | `includeLeadingComments` | `-- header` |
-| `includeLeadingWhitespace` | The newline and two spaces after the comment |
+| `includeLeadingWhitespace` | The two spaces after the comment line |
 | Both | The two spaces before `-- header` |
 
 Comment-only mode keeps whitespace between comments and the keyword because
 `text` remains a contiguous source substring. Whitespace-only mode does not cross
-or include a comment. Semicolon delimiters are excluded in every mode.
+or include a comment. The tokenizer includes a line comment's terminating newline
+in that comment token, so whitespace-only mode does not retain that newline.
+Semicolon delimiters are excluded in every mode.
 
 To preserve a module's header comments and their leading whitespace:
 
