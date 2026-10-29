@@ -2022,3 +2022,12 @@ describe('leading boundary compatibility', () => {
     expect(actual.parameters).to.deep.equal(expected.parameters);
   });
 });
+
+describe('line comment whitespace boundary', () => {
+  it('does not include the newline owned by an excluded line comment', () => {
+    const sql = '  -- header\n  SELECT 1;';
+    const actual = identify(sql, { includeLeadingWhitespace: true })[0];
+    expect(actual.start).to.equal(sql.indexOf('  SELECT'));
+    expect(actual.text).to.equal('  SELECT 1;');
+  });
+});
