@@ -40,28 +40,31 @@ export function identify(query: string, options: IdentifyOptions = {}): Identify
   return parsed.body.map((statement) => {
     let start = statement.start;
     let leadingStart: number | undefined;
-    let hasComment = false;
+    let firstComment: number | undefined;
     while (
-      options.includeLeadingComments === true &&
+      (options.includeLeadingComments === true || options.includeLeadingWhitespace === true) &&
       tokenIndex < parsed.tokens.length &&
       parsed.tokens[tokenIndex].start < statement.start
     ) {
       const token = parsed.tokens[tokenIndex++];
       if (token.end <= previousEnd) continue;
-      if (
-        token.type === 'whitespace' ||
-        token.type === 'comment-inline' ||
-        token.type === 'comment-block'
+      if (token.type === 'whitespace') {
+        if (leadingStart === undefined) leadingStart = token.start;
+      } else if (
+        options.includeLeadingComments === true &&
+        (token.type === 'comment-inline' || token.type === 'comment-block')
       ) {
         if (leadingStart === undefined) leadingStart = token.start;
-        if (token.type !== 'whitespace') hasComment = true;
+        if (firstComment === undefined) firstComment = token.start;
       } else {
         leadingStart = undefined;
-        hasComment = false;
+        firstComment = undefined;
       }
     }
-    if (options.includeLeadingComments === true && hasComment && leadingStart !== undefined) {
+    if (options.includeLeadingWhitespace === true && leadingStart !== undefined) {
       start = leadingStart;
+    } else if (options.includeLeadingComments === true && firstComment !== undefined) {
+      start = firstComment;
     }
     previousEnd = statement.end;
     const result: IdentifyResult = {
