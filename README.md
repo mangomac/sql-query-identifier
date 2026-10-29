@@ -152,24 +152,36 @@ console.log(statements);
 1. `options (object)`: allow to set different configurations
     1. `strict (bool)`: allow disable strict mode which will ignore unknown types *(default=true)*
     2. `dialect (string)`: Specify your database dialect, values: `generic`, `mysql`, `oracle`, `psql`, `sqlite`, `mssql`, `bigquery` and `dynamodb`. *(default=generic)*
-    3. `includeLeadingComments (bool)`: Include leading comments and adjacent whitespace in statement `text` and `start`. Whitespace alone does not change `start`; `end` stays unchanged. *(default=false)*
+    3. `includeLeadingComments (bool)`: Include leading comments in statement `text` and `start`, starting at the first comment unless `includeLeadingWhitespace` is also enabled. *(default=false)*
+    4. `includeLeadingWhitespace (bool)`: Include whitespace immediately before the statement, or before its leading comments when `includeLeadingComments` is enabled. *(default=false)*
 
-### Leading comments
+### Leading comments and whitespace
 
-Pass `includeLeadingComments: true` to include a statement's leading comments in
-its `text`. Its `start` moves to the beginning of the comment prefix, including
-adjacent whitespace. `end` does not change. Semicolons before the prefix stay out
-of the statement. Whitespace alone does not change `start`.
+Both options default to `false`, so existing callers still receive text and
+offsets that start at the first keyword. Neither option changes `end`.
+
+For `  -- header\n  SELECT 1;`:
+
+| Options | Returned `text` starts at |
+| --- | --- |
+| Neither | `SELECT` |
+| `includeLeadingComments` | `-- header` |
+| `includeLeadingWhitespace` | The newline and two spaces after the comment |
+| Both | The two spaces before `-- header` |
+
+Comment-only mode keeps whitespace between comments and the keyword because
+`text` remains a contiguous source substring. Whitespace-only mode does not cross
+or include a comment. Semicolon delimiters are excluded in every mode.
+
+To preserve a module's header comments and their leading whitespace:
 
 ```js
-identify('-- header\nCREATE VIEW v AS SELECT 1;', {
+identify('  -- header\nCREATE VIEW v AS SELECT 1;', {
   dialect: 'mssql',
   includeLeadingComments: true,
+  includeLeadingWhitespace: true,
 });
 ```
-
-The option defaults to `false`. Existing callers still receive text and offsets
-that start at the first keyword.
 
 ### DynamoDB (PartiQL)
 
